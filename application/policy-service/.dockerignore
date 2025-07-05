@@ -1,0 +1,20 @@
+# Ignore build artifacts
+target/
+*.jar
+*.war
+*.log
+*.tmp
+
+# Ignore Git
+.git
+.gitignore
+
+# Ignore IDE/editor files
+*.iml
+.idea/
+.vscode/
+
+# Ignore OS junk
+.DS_Store
+Thumbs.db
+

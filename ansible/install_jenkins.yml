@@ -1,0 +1,26 @@
+---
+- name: Fix Jenkins Service to Use Java 17
+  hosts: jenkins_master
+  become: yes
+  tasks:
+    - name: Ensure Java 17 is default (safety check)
+      raw: |
+        alternatives --install /usr/bin/java java /usr/lib/jvm/java-17-amazon-corretto.x86_64/bin/java 3
+        alternatives --set java /usr/lib/jvm/java-17-amazon-corretto.x86_64/bin/java
+
+    - name: Set correct ExecStart for Jenkins service
+      lineinfile:
+        path: /usr/lib/systemd/system/jenkins.service
+        regexp: '^ExecStart='
+        line: 'ExecStart=/usr/bin/java -jar /usr/share/java/jenkins.war'
+        backup: yes
+
+    - name: Reload systemd to apply service change
+      raw: systemctl daemon-reload
+
+    - name: Restart Jenkins
+      raw: systemctl restart jenkins
+
+    - name: Enable Jenkins on boot
+      raw: systemctl enable jenkins
+

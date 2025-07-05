@@ -1,0 +1,31 @@
+---
+- name: Install DevOps tools on Jenkins Slave
+  hosts: jenkins_slave
+  become: yes
+  tasks:
+    - name: Install Git
+      raw: yum install -y git
+
+    - name: Install Docker
+      raw: yum install -y docker
+
+    - name: Enable and start Docker
+      raw: systemctl enable --now docker
+
+    - name: Add ec2-user to docker group
+      raw: usermod -aG docker ec2-user
+
+    - name: Install Maven
+      raw: yum install -y maven
+
+    - name: Install Java 17 (if needed)
+      raw: |
+        amazon-linux-extras enable corretto17 || true
+        yum clean metadata
+        yum install -y java-17-amazon-corretto
+
+    - name: Set Java 17 as default
+      raw: |
+        alternatives --install /usr/bin/java java /usr/lib/jvm/java-17-amazon-corretto.x86_64/bin/java 3
+        alternatives --set java /usr/lib/jvm/java-17-amazon-corretto.x86_64/bin/java
+

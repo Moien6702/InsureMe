@@ -1,0 +1,61 @@
+---
+- name: Install Docker and Kubernetes on K8s nodes
+  hosts: k8s_master,k8s_worker
+  become: yes
+
+  tasks:
+
+    - name: Disable swap
+      shell: |
+        swapoff -a
+        sed -i '/swap/d' /etc/fstab
+
+    - name: Ensure swap is off on boot
+      command: swapon --summary
+      register: swap_status
+      changed_when: false
+
+    - name: Clean and make yum cache
+      raw: |
+        yum clean all
+        yum makecache
+
+    - name: Install required packages using raw
+      raw: |
+        yum install -y yum-utils device-mapper-persistent-data lvm2
+
+    - name: Enable and install Docker via Amazon Linux Extras
+      raw: |
+        amazon-linux-extras enable docker
+        yum clean metadata
+        yum install -y docker
+
+    - name: Start and enable Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add Kubernetes repo
+      copy:
+        dest: /etc/yum.repos.d/kubernetes.repo
+        content: |
+          [kubernetes]
+          name=Kubernetes
+          baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+          enabled=1
+          gpgcheck=1
+          repo_gpgcheck=1
+          gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+          exclude=kubelet kubeadm kubectl
+
+    - name: Install Kubernetes components
+      raw: |
+        yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+
+    - name: Enable and start kubelet
+      systemd:
+        name: kubelet
+        enabled: true
+        state: started
+
